@@ -1,0 +1,36 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "MiniJava",
+	"patterns": [
+		{ "include": "#comments" },
+		{ "include": "#keywords" },
+		{ "include": "#names" }
+  ],
+  "repository": {
+		"comments": {
+		  "patterns": [
+  			{
+	  		  "match": "//.*$\n?",
+  			  "name": "comment.line.double-slash.syntax"
+  			}
+		  ]
+		},
+		"keywords": {
+		  "patterns": [
+  			{
+  				"match": "\\b(boolean|class|else|extends|false|if|int|main|new|public|return|static|this|true|void|while)\\b",
+  			  "name": "keyword.syntax"
+  			}
+		  ]
+		},
+		"names": {
+		  "patterns": [
+  			{
+  			  "match": "\\b[a-zA-Z][a-zA-Z0-9_]*\\b",
+  			  "name": "entity.name.class"
+  			}
+		  ]
+		}
+	},
+	"scopeName": "source.minijava"
+}

@@ -24,7 +24,15 @@
                 "aliases": [
                     "MiniJava",
                     "minijava"
-                ]
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "minijava",
+                "scopeName": "source.minijava",
+                "path": "./syntaxes/minijava.tmLanguage.json"
             }
         ]
     },
