@@ -14,7 +14,7 @@ export function activate(context: ExtensionContext) {
     let java = "/usr/bin/java";
     let args = [
         "-cp",
-        "/Users/asloane/Projects/Kiama/kiama/extras/target/scala-2.12/kiama-extras-assembly-2.2.1-SNAPSHOT-tests.jar",
+        "/Users/asloane/Projects/Kiama/kiama/extras/target/scala-2.12/kiama-extras-assembly-2.3.0-SNAPSHOT-tests.jar",
         "org.bitbucket.inkytonik.kiama.example.minijava.ServerMain",
         "--Koutput", "string"
     ];
