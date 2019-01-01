@@ -7,10 +7,20 @@
         "out": true // set this to false to include "out" folder in search results
     },
     "cSpell.words": [
+        "bitbucket",
+        "bytecode",
+        "classpath",
+        "jvm",
         "languageclient",
         "minijava",
         "mj",
+        "org",
         "p",
-        "tsc"
+        "prettysourcetree",
+        "prettytree",
+        "sourcetree",
+        "targettree",
+        "tsc",
+        "usr"
     ]
 }

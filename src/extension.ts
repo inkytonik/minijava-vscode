@@ -1,22 +1,18 @@
 'use strict';
 
-import { ExtensionContext } from 'vscode';
-
-import {
-    LanguageClient,
-    LanguageClientOptions,
-    ServerOptions
-} from 'vscode-languageclient';
+import { ExtensionContext, workspace } from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient';
+import { Monto } from './monto';
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
     let java = "/usr/bin/java";
     let args = [
-        "-cp",
+        "-classpath",
         "/Users/asloane/Projects/Kiama/kiama/extras/target/scala-2.12/kiama-extras-assembly-2.3.0-SNAPSHOT-tests.jar",
-        "org.bitbucket.inkytonik.kiama.example.minijava.ServerMain",
-        "--Koutput", "string"
+        "org.bitbucket.inkytonik.kiama.example.minijava.Main",
+        "--server"
     ];
 
     let serverOptions: ServerOptions = {
@@ -27,7 +23,7 @@ export function activate(context: ExtensionContext) {
         },
         debug: {
             command: java,
-            args: args.concat(["--Kdebug"]),
+            args: args.concat(["--debug"]),
             options: {}
         }
     };
@@ -49,7 +45,21 @@ export function activate(context: ExtensionContext) {
         clientOptions
     );
 
+    Monto.setup(context, client, product => {
+        if (shouldShowProduct(product)) {
+            Monto.showProduct(product);
+        }
+    });
+
     context.subscriptions.push(client.start());
+}
+
+function shouldShowProduct(product: Monto.Product): Boolean {
+    let config = workspace.getConfiguration('minijava');
+    return (product.name === 'source' && config.showSourceProduct) ||
+        (product.name === 'sourcetree' && config.showSourceTreeProduct) ||
+        (product.name === 'target' && config.showTargetProduct) ||
+        (product.name === 'targettree' && config.showTargetTreeProduct);
 }
 
 export function deactivate(): Thenable<void> | undefined {
