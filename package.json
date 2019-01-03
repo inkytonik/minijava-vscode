@@ -40,6 +40,16 @@
             "type": "object",
             "title": "MiniJava",
             "properties": {
+                "minijava.showNameProduct": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "The name product for a MiniJava file shows a depiction of the name analysis information computed by the MiniJava compiler when compiling that file. When this setting is on and a name product is published, display it in an editor."
+                },
+                "minijava.showOutlineProduct": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "The outline product for a MiniJava file shows a code outline in source form computed by the MiniJava compiler when compiling that file. When this setting is on and an outline product is published, display it in an editor."
+                },
                 "minijava.showSourceProduct": {
                     "type": "boolean",
                     "default": false,
