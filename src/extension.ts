@@ -56,7 +56,9 @@ export function activate(context: ExtensionContext) {
 
 function shouldShowProduct(product: Monto.Product): Boolean {
     let config = workspace.getConfiguration('minijava');
-    return (product.name === 'source' && config.showSourceProduct) ||
+    return (product.name === 'name' && config.showNameProduct) ||
+        (product.name === 'outline' && config.showOutlineProduct) ||
+        (product.name === 'source' && config.showSourceProduct) ||
         (product.name === 'sourcetree' && config.showSourceTreeProduct) ||
         (product.name === 'target' && config.showTargetProduct) ||
         (product.name === 'targettree' && config.showTargetTreeProduct);
