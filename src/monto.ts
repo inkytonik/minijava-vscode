@@ -28,14 +28,19 @@ export namespace Monto {
     }
 
     export function showProduct(product : Product) {
-        window.showTextDocument(
-            productToUri(product),
-            {
-                preserveFocus: true,
-                viewColumn: ViewColumn.Beside,
-                preview: false
-            }
-        );
+        let uri = productToUri(product).toString();
+        let editors = window.visibleTextEditors;
+        let uris = editors.map(editor => editor.document.uri.toString());
+        if (uris.indexOf(uri) === -1) {
+            window.showTextDocument(
+                productToUri(product),
+                {
+                    preserveFocus: true,
+                    viewColumn: ViewColumn.Beside,
+                    preview: false,
+                }
+            );
+        }
     }
 
     function productToUri(product : Product) : Uri {
