@@ -18,8 +18,10 @@
         "p",
         "prettysourcetree",
         "prettytree",
+        "sbegin",
         "sourcetree",
         "targettree",
+        "tbegin",
         "tsc",
         "usr"
     ]

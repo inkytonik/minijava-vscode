@@ -1,4 +1,4 @@
-import { ExtensionContext, EventEmitter, TextDocumentContentProvider, Uri, ViewColumn, workspace, window } from 'vscode';
+import { ExtensionContext, EventEmitter, Range, Selection, TextDocumentContentProvider, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, Uri, ViewColumn, workspace, window } from 'vscode';
 import { NotificationHandler, NotificationType } from 'vscode-jsonrpc';
 import { LanguageClient } from 'vscode-languageclient';
 
@@ -11,6 +11,12 @@ export namespace Monto {
         name: string;
         language: string;
         content: string;
+        rangeMap: [RangePair];
+    }
+
+    export interface RangePair {
+        sbegin: number; send: number;
+        tbegin: number; tend: number;
     }
 
     namespace PublishProduct {
@@ -22,30 +28,30 @@ export namespace Monto {
     let products = new Map<string, Product>();
 
     function saveProduct(product : Product) {
-        let uri = productToUri(product);
+        let uri = productToTargetUri(product);
+        product.rangeMap = product.rangeMap.sort((a , b) =>
+            (a.tend - a.tbegin) - (b.tend - b.tbegin)
+        );
         products.set(uri.toString(), product);
         montoProvider.onDidChangeEmitter.fire(uri);
     }
 
     export function showProduct(product : Product) {
-        let uri = productToUri(product).toString();
-        let editors = window.visibleTextEditors;
-        let uris = editors.map(editor => editor.document.uri.toString());
-        if (uris.indexOf(uri) === -1) {
-            window.showTextDocument(
-                productToUri(product),
-                {
-                    preserveFocus: true,
-                    viewColumn: ViewColumn.Beside,
-                    preview: false,
-                }
-            );
-        }
+        openInEditor(productToTargetUri(product), true);
     }
 
-    function productToUri(product : Product) : Uri {
+    function getProduct(uri : Uri) : Product | undefined {
+        return products.get(uri.toString());
+    }
+
+    function productToTargetUri(product : Product) : Uri {
         let path = Uri.parse(product.uri).path;
         return Uri.parse(`monto:${path}-${product.name}.${product.language}`);
+    }
+
+    function targetUriToSourceUri(uri : Uri) : Uri {
+        let path = uri.path.substring(0, uri.path.lastIndexOf("-"));
+        return Uri.parse(`file:${path}`);
     }
 
     // Monto URI scheme
@@ -80,13 +86,81 @@ export namespace Monto {
             client : LanguageClient,
             handler : NotificationHandler<Product>
         ) {
+        window.onDidChangeTextEditorSelection(change => {
+            if (isMontoEditor(change.textEditor)) {
+                selectLinkedRanges(change);
+            }
+        });
+
+        context.subscriptions.push(workspace.registerTextDocumentContentProvider(montoScheme, montoProvider));
+
         client.onReady().then(_ => {
-            context.subscriptions.push(workspace.registerTextDocumentContentProvider(montoScheme, montoProvider));
             client.onNotification(PublishProduct.type, product => {
                 saveProduct(product);
                 handler(product);
             });
         });
+    }
+
+    function isMontoEditor(editor : TextEditor) : Boolean {
+        return editor.document.uri.scheme === 'monto';
+    }
+
+    function selectLinkedRanges(change : TextEditorSelectionChangeEvent) {
+        let targetEditor = change.textEditor;
+        let targetUri = targetEditor.document.uri;
+        let sourceUri = targetUriToSourceUri(targetUri);
+        console.log(`opening ${sourceUri.fsPath}`);
+        openInEditor(sourceUri, false).then(sourceEditor => {
+            let product = getProduct(targetUri);
+            if (product) {
+                let targetSelection = change.selections[0];
+                let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
+                let pair = findContaining(product.rangeMap, targetOffset);
+                if (pair) {
+                    let selection = pairToSourceSelection(sourceEditor, pair);
+                    setSourceSelection(sourceEditor, selection);
+                }
+            }
+        });
+    }
+
+    function findContaining(positions : [RangePair], targetOffset : number) : RangePair | undefined {
+        return positions.find(entry =>
+            (entry.tbegin <= targetOffset) && (targetOffset < entry.tend)
+        );
+    }
+
+    function pairToSourceSelection(editor : TextEditor, entry : RangePair) : Range {
+        console.log(`getting selection for ${JSON.stringify(editor.document.uri)}`);
+        let s = editor.document.positionAt(entry.sbegin);
+        let f = editor.document.positionAt(entry.send);
+        return new Range(s, f);
+    }
+
+    function setSourceSelection(editor : TextEditor, selection : Range) {
+        window.showTextDocument(
+            editor.document,
+            {
+                preserveFocus: false,
+                preview: false
+            }
+        );
+        editor.selections = [new Selection(selection.start, selection.end)];
+        editor.revealRange(selection, TextEditorRevealType.InCenterIfOutsideViewport);
+    }
+
+    // Utilities
+
+    function openInEditor(uri : Uri, isTarget : boolean) : Thenable<TextEditor>  {
+        return window.showTextDocument(
+            uri,
+            {
+                preserveFocus: isTarget,
+                viewColumn: isTarget ? ViewColumn.Two : ViewColumn.One,
+                preview: false
+            }
+        );
     }
 
 }
