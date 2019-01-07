@@ -56,12 +56,12 @@ export function activate(context: ExtensionContext) {
 
 function shouldShowProduct(product: Monto.Product): Boolean {
     let config = workspace.getConfiguration('minijava');
-    return (product.name === 'name' && config.showNameProduct) ||
-        (product.name === 'outline' && config.showOutlineProduct) ||
-        (product.name === 'source' && config.showSourceProduct) ||
-        (product.name === 'sourcetree' && config.showSourceTreeProduct) ||
-        (product.name === 'target' && config.showTargetProduct) ||
-        (product.name === 'targettree' && config.showTargetTreeProduct);
+    return (product.name === 'name' && config.showNameAnalysisStructure) ||
+        (product.name === 'outline' && config.showOutline) ||
+        (product.name === 'source' && config.showSource) ||
+        (product.name === 'sourcetree' && config.showSourceTree) ||
+        (product.name === 'target' && config.showTarget) ||
+        (product.name === 'targettree' && config.showTargetTree);
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -40,35 +40,35 @@
             "type": "object",
             "title": "MiniJava",
             "properties": {
-                "minijava.showNameProduct": {
+                "minijava.showNameAnalysisStructure": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The name product for a MiniJava file shows a depiction of the name analysis information computed by the MiniJava compiler when compiling that file. When this setting is on and a name product is published, display it in an editor."
+                    "description": "Show the name analysis structure from the MiniJava compiler."
                 },
-                "minijava.showOutlineProduct": {
+                "minijava.showOutline": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The outline product for a MiniJava file shows a code outline in source form computed by the MiniJava compiler when compiling that file. When this setting is on and an outline product is published, display it in an editor."
+                    "description": "Show a source form outline from the MiniJava compiler."
                 },
-                "minijava.showSourceProduct": {
+                "minijava.showSource": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The source product for a MiniJava file shows a pretty-printed version of the source abstract syntax tree used by the MiniJava compiler when compiling that file. When this setting is on and a source product is published, display it in an editor."
+                    "description": "Show a pretty-printed version of the source abstract syntax tree from the MiniJava compiler."
                 },
-                "minijava.showSourceTreeProduct": {
+                "minijava.showSourceTree": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The source tree product for a MiniJava file shows the source abstract syntax tree used by the MiniJava compiler when compiling that file. When this setting is on and a source tree product is published, display it in an editor."
+                    "description": "Show the source abstract syntax tree from the MiniJava compiler."
                 },
-                "minijava.showTargetProduct": {
+                "minijava.showTarget": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The target product for a MiniJava file shows a pretty-printed version of the abstract syntax tree of the JVM bytecode produced by the MiniJava compiler when compiling that file. When this setting is on and a target product is published, display it in an editor."
+                    "description": "Show a pretty-printed version of the abstract syntax tree of the JVM bytecode from the MiniJava compiler."
                 },
-                "minijava.showTargetTreeProduct": {
+                "minijava.showTargetTree": {
                     "type": "boolean",
                     "default": false,
-                    "description": "The target tree product for a MiniJava file shows the abstract syntax tree of the JVM bytecode produced by the MiniJava compiler when compiling that file. When this setting is on and a target tree product is published, display it in an editor."
+                    "description": "Show the abstract syntax tree of the JVM bytecode from the MiniJava compiler."
                 }
             }
         }
