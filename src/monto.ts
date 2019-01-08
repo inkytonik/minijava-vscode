@@ -30,7 +30,7 @@ export namespace Monto {
 
     let products = new Map<string, Product>();
 
-    function saveProduct(product : Product) {
+    function saveProduct(product: Product) {
         let uri = productToTargetUri(product);
         product.rangeMap = product.rangeMap.sort((a , b) =>
             (a.tend - a.tbegin) - (b.tend - b.tbegin)
@@ -40,20 +40,20 @@ export namespace Monto {
         montoProvider.onDidChangeEmitter.fire(uri);
     }
 
-    export function showProduct(product : Product) {
+    export function showProduct(product: Product) {
         openInEditor(productToTargetUri(product), true);
     }
 
-    function getProduct(uri : Uri) : Product | undefined {
+    function getProduct(uri: Uri): Product | undefined {
         return products.get(uri.toString());
     }
 
-    function productToTargetUri(product : Product) : Uri {
+    function productToTargetUri(product: Product): Uri {
         let path = Uri.parse(product.uri).path;
         return Uri.parse(`monto:${path}-${product.name}.${product.language}`);
     }
 
-    function targetUriToSourceUri(uri : Uri) : Uri {
+    function targetUriToSourceUri(uri: Uri): Uri {
         let path = uri.path.substring(0, uri.path.lastIndexOf("-"));
         return Uri.parse(`file:${path}`);
     }
@@ -87,8 +87,8 @@ export namespace Monto {
 
     export function setup(
             context: ExtensionContext,
-            client : LanguageClient,
-            handler : NotificationHandler<Product>
+            client: LanguageClient,
+            handler: NotificationHandler<Product>
         ) {
         window.onDidChangeTextEditorSelection(change => {
             if (isMontoEditor(change.textEditor)) {
@@ -106,11 +106,11 @@ export namespace Monto {
         });
     }
 
-    function isMontoEditor(editor : TextEditor) : Boolean {
+    function isMontoEditor(editor: TextEditor): Boolean {
         return editor.document.uri.scheme === 'monto';
     }
 
-    function selectLinkedRanges(change : TextEditorSelectionChangeEvent) {
+    function selectLinkedRanges(change: TextEditorSelectionChangeEvent) {
         let targetEditor = change.textEditor;
         let targetUri = targetEditor.document.uri;
         let sourceUri = targetUriToSourceUri(targetUri);
@@ -132,19 +132,19 @@ export namespace Monto {
         });
     }
 
-    function findContaining(positions : [RangePair], targetOffset : number) : RangePair | undefined {
+    function findContaining(positions: [RangePair], targetOffset: number): RangePair | undefined {
         return positions.find(entry =>
             (entry.tbegin <= targetOffset) && (targetOffset < entry.tend)
         );
     }
 
-    function pairToSourceSelection(editor : TextEditor, entry : RangePair) : Range {
+    function pairToSourceSelection(editor: TextEditor, entry: RangePair): Range {
         let s = editor.document.positionAt(entry.sbegin);
         let f = editor.document.positionAt(entry.send);
         return new Range(s, f);
     }
 
-    function setSourceSelection(editor : TextEditor, selection : Range) {
+    function setSourceSelection(editor: TextEditor, selection: Range) {
         window.showTextDocument(
             editor.document,
             {
@@ -158,7 +158,7 @@ export namespace Monto {
 
     // Utilities
 
-    function openInEditor(uri : Uri, isTarget : boolean) : Thenable<TextEditor>  {
+    function openInEditor(uri: Uri, isTarget: boolean): Thenable<TextEditor>  {
         return window.showTextDocument(
             uri,
             {
