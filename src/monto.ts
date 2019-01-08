@@ -12,6 +12,9 @@ export namespace Monto {
         language: string;
         content: string;
         rangeMap: [RangePair];
+
+        // Internal fields
+        handleSelectionChange: boolean;
     }
 
     export interface RangePair {
@@ -33,6 +36,7 @@ export namespace Monto {
             (a.tend - a.tbegin) - (b.tend - b.tbegin)
         );
         products.set(uri.toString(), product);
+        product.handleSelectionChange = false;
         montoProvider.onDidChangeEmitter.fire(uri);
     }
 
@@ -113,12 +117,16 @@ export namespace Monto {
         openInEditor(sourceUri, false).then(sourceEditor => {
             let product = getProduct(targetUri);
             if (product) {
-                let targetSelection = change.selections[0];
-                let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
-                let pair = findContaining(product.rangeMap, targetOffset);
-                if (pair) {
-                    let selection = pairToSourceSelection(sourceEditor, pair);
-                    setSourceSelection(sourceEditor, selection);
+                if (product.handleSelectionChange) {
+                    let targetSelection = change.selections[0];
+                    let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
+                    let pair = findContaining(product.rangeMap, targetOffset);
+                    if (pair) {
+                        let selection = pairToSourceSelection(sourceEditor, pair);
+                        setSourceSelection(sourceEditor, selection);
+                    }
+                } else {
+                    product.handleSelectionChange = true;
                 }
             }
         });
