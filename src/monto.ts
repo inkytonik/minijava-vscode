@@ -1,4 +1,4 @@
-import { ExtensionContext, EventEmitter, Range, Selection, TextDocumentContentProvider, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, Uri, ViewColumn, workspace, window } from 'vscode';
+import { commands, ExtensionContext, EventEmitter, Range, Selection, TextDocumentContentProvider, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, Uri, ViewColumn, workspace, window } from 'vscode';
 import { NotificationHandler, NotificationType } from 'vscode-jsonrpc';
 import { LanguageClient } from 'vscode-languageclient';
 
@@ -14,6 +14,8 @@ export namespace Monto {
         rangeMap: RangePair[];
 
         // Internal fields
+        rangeMapST: RangePair[];
+        rangeMapTS: RangePair[];
         handleSelectionChange: boolean;
     }
 
@@ -32,7 +34,10 @@ export namespace Monto {
 
     function saveProduct(product: Product) {
         let uri = productToTargetUri(product);
-        product.rangeMap = product.rangeMap.sort((a , b) =>
+        product.rangeMapST = product.rangeMap.sort((a , b) =>
+            (b.tend - b.tbegin) - (a.tend - a.tbegin)
+        );
+        product.rangeMapTS = product.rangeMap.sort((a , b) =>
             (a.tend - a.tbegin) - (b.tend - b.tbegin)
         );
         products.set(uri.toString(), product);
@@ -47,12 +52,15 @@ export namespace Monto {
     function getProduct(uri: Uri): Product {
         let p = products.get(uri.toString());
         if (p === undefined) {
+            let range = { sbegin: 0, send: 0, tbegin: 0, tend: 0 };
             return {
                 uri: uri.toString(),
                 name: "",
                 language: "",
                 content: "",
-                rangeMap: [{ sbegin: 0, send: 0, tbegin: 0, tend: 0 }],
+                rangeMap: [range],
+                rangeMapST: [range],
+                rangeMapTS: [range],
                 handleSelectionChange: false
             };
         } else {
@@ -98,15 +106,22 @@ export namespace Monto {
     // Setup
 
     export function setup(
+            name: string,
             context: ExtensionContext,
             client: LanguageClient,
             handler: NotificationHandler<Product>
         ) {
         window.onDidChangeTextEditorSelection(change => {
             if (isMontoEditor(change.textEditor)) {
-                selectLinkedRanges(change);
+                selectLinkedSourceRanges(change);
             }
         });
+
+        context.subscriptions.push(
+            commands.registerCommand(`${name}.selectLinkedEditors`, () => {
+                selectLinkedTargetRanges();
+            })
+        );
 
         context.subscriptions.push(workspace.registerTextDocumentContentProvider(montoScheme, montoProvider));
 
@@ -122,7 +137,37 @@ export namespace Monto {
         return editor.document.uri.scheme === 'monto';
     }
 
-    function selectLinkedRanges(change: TextEditorSelectionChangeEvent) {
+    // Source to target linking
+
+    function selectLinkedTargetRanges() {
+        let editor = window.activeTextEditor;
+        if (editor !== undefined) {
+            let sourceEditor = editor;
+            let sourceUri = sourceEditor.document.uri.toString();
+            let sourceSelections = sourceEditor.selections;
+            window.visibleTextEditors.forEach(targetEditor => {
+                if (isMontoEditor(targetEditor)) {
+                    let targetUri = targetEditor.document.uri;
+                    let targetSourceUri = targetUriToSourceUri(targetUri);
+                    if (targetSourceUri.toString() === sourceUri) {
+                        let product = getProduct(targetUri);
+                        let targetSelections =
+                        sourceSelections.map(sourceSelection => {
+                            return getSelection(product, sourceEditor, sourceSelection, targetEditor, true);
+                        });
+                        if (targetSelections.length > 0) {
+                            product.handleSelectionChange = false;
+                            showSelections(targetEditor, targetSelections);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Target to source linking
+
+    function selectLinkedSourceRanges(change: TextEditorSelectionChangeEvent) {
         let targetEditor = change.textEditor;
         let targetUri = targetEditor.document.uri;
         let sourceUri = targetUriToSourceUri(targetUri);
@@ -131,10 +176,10 @@ export namespace Monto {
             if (product.handleSelectionChange) {
                 let sourceSelections =
                     change.selections.map(targetSelection => {
-                        return getSourceSelection(product, targetEditor, targetSelection, sourceEditor);
+                        return getSelection(product, targetEditor, targetSelection, sourceEditor, false);
                     });
                 if (sourceSelections.length > 0) {
-                    showSourceSelections(sourceEditor, sourceSelections);
+                    showSelections(sourceEditor, sourceSelections);
                 }
             } else {
                 product.handleSelectionChange = true;
@@ -142,29 +187,47 @@ export namespace Monto {
         });
     }
 
-    function getSourceSelection(product : Product, targetEditor: TextEditor, targetSelection: Selection, sourceEditor: TextEditor): Range {
-        let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
-        let pair = findContaining(product.rangeMap, targetOffset);
+    // Utilities
+
+    function getSelection(product : Product, fromEditor: TextEditor, fromSelection: Selection, toEditor: TextEditor, forward: boolean): Range {
+        let fromOffset = fromEditor.document.offsetAt(fromSelection.start);
+        let pair = findContainingRange(product, fromOffset, forward);
         if (pair === undefined) {
             return new Range(0, 0, 0, 0);
+        } else if (forward) {
+            return pairToTargetSelection(toEditor, pair);
         } else {
-            return pairToSourceSelection(sourceEditor, pair);
+            return pairToSourceSelection(toEditor, pair);
         }
     }
 
-    function findContaining(positions: RangePair[], targetOffset: number): RangePair | undefined {
-        return positions.find(entry =>
-            (entry.tbegin <= targetOffset) && (targetOffset < entry.tend)
-        );
+    function findContainingRange(product : Product, offset: number, forward: boolean): RangePair | undefined {
+        if (forward) {
+            return product.rangeMapST.find(entry =>
+                (entry.sbegin <= offset) && (offset < entry.send)
+            );
+        } else {
+            return product.rangeMapTS.find(entry =>
+                (entry.tbegin <= offset) && (offset < entry.tend)
+            );
+        }
     }
 
     function pairToSourceSelection(editor: TextEditor, entry: RangePair): Range {
-        let s = editor.document.positionAt(entry.sbegin);
-        let f = editor.document.positionAt(entry.send);
+        return pairToSelection(editor, entry.sbegin, entry.send);
+    }
+
+    function pairToTargetSelection(editor: TextEditor, entry: RangePair): Range {
+        return pairToSelection(editor, entry.tbegin, entry.tend);
+    }
+
+    function pairToSelection(editor: TextEditor, start: number, end: number): Range {
+        let s = editor.document.positionAt(start);
+        let f = editor.document.positionAt(end);
         return new Range(s, f);
     }
 
-    function showSourceSelections(editor: TextEditor, selections: Range[]) {
+    function showSelections(editor: TextEditor, selections: Range[]) {
         window.showTextDocument(
             editor.document,
             {
@@ -175,8 +238,6 @@ export namespace Monto {
         editor.selections = selections.map(s => new Selection(s.start, s.end));
         editor.revealRange(selections[0], TextEditorRevealType.InCenterIfOutsideViewport);
     }
-
-    // Utilities
 
     function openInEditor(uri: Uri, isTarget: boolean): Thenable<TextEditor>  {
         return window.showTextDocument(

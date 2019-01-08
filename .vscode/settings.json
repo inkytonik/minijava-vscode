@@ -7,9 +7,11 @@
         "out": true // set this to false to include "out" folder in search results
     },
     "cSpell.words": [
+        "alt",
         "bitbucket",
         "bytecode",
         "classpath",
+        "ctrl",
         "jvm",
         "languageclient",
         "minijava",

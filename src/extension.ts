@@ -45,7 +45,7 @@ export function activate(context: ExtensionContext) {
         clientOptions
     );
 
-    Monto.setup(context, client, product => {
+    Monto.setup("minijava", context, client, product => {
         if (shouldShowProduct(product)) {
             Monto.showProduct(product);
         }

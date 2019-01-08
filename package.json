@@ -71,7 +71,22 @@
                     "description": "Show the abstract syntax tree of the JVM bytecode from the MiniJava compiler."
                 }
             }
-        }
+        },
+        "commands": [
+            {
+                "category": "MiniJava",
+                "command": "minijava.selectLinkedEditors",
+                "title": "Focus Product Editors"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "minijava.selectLinkedEditors",
+                "key": "ctrl+alt+p",
+                "mac": "cmd+alt+p",
+                "when": "editorTextFocus && editorLangId == 'minijava'"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
