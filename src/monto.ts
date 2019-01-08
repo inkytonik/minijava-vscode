@@ -118,18 +118,25 @@ export namespace Monto {
             let product = getProduct(targetUri);
             if (product) {
                 if (product.handleSelectionChange) {
-                    let targetSelection = change.selections[0];
-                    let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
-                    let pair = findContaining(product.rangeMap, targetOffset);
-                    if (pair) {
-                        let selection = pairToSourceSelection(sourceEditor, pair);
-                        setSourceSelection(sourceEditor, selection);
+                    let sourceSelection = getSourceSelection(product, targetEditor, change.selections[0], sourceEditor);
+                    if (sourceSelection) {
+                        showSourceSelection(sourceEditor, sourceSelection);
                     }
                 } else {
                     product.handleSelectionChange = true;
                 }
             }
         });
+    }
+
+    function getSourceSelection(product : Product, targetEditor: TextEditor, targetSelection: Selection, sourceEditor: TextEditor): Range | undefined {
+        let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
+        let pair = findContaining(product.rangeMap, targetOffset);
+        if (pair) {
+            return pairToSourceSelection(sourceEditor, pair);
+        } else {
+            return undefined;
+        }
     }
 
     function findContaining(positions: [RangePair], targetOffset: number): RangePair | undefined {
@@ -144,7 +151,7 @@ export namespace Monto {
         return new Range(s, f);
     }
 
-    function setSourceSelection(editor: TextEditor, selection: Range) {
+    function showSourceSelection(editor: TextEditor, selection: Range) {
         window.showTextDocument(
             editor.document,
             {
