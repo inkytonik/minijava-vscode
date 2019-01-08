@@ -110,7 +110,6 @@ export namespace Monto {
         let targetEditor = change.textEditor;
         let targetUri = targetEditor.document.uri;
         let sourceUri = targetUriToSourceUri(targetUri);
-        console.log(`opening ${sourceUri.fsPath}`);
         openInEditor(sourceUri, false).then(sourceEditor => {
             let product = getProduct(targetUri);
             if (product) {
@@ -132,7 +131,6 @@ export namespace Monto {
     }
 
     function pairToSourceSelection(editor : TextEditor, entry : RangePair) : Range {
-        console.log(`getting selection for ${JSON.stringify(editor.document.uri)}`);
         let s = editor.document.positionAt(entry.sbegin);
         let f = editor.document.positionAt(entry.send);
         return new Range(s, f);
