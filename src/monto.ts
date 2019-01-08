@@ -11,7 +11,7 @@ export namespace Monto {
         name: string;
         language: string;
         content: string;
-        rangeMap: [RangePair];
+        rangeMap: RangePair[];
 
         // Internal fields
         handleSelectionChange: boolean;
@@ -44,8 +44,20 @@ export namespace Monto {
         openInEditor(productToTargetUri(product), true);
     }
 
-    function getProduct(uri: Uri): Product | undefined {
-        return products.get(uri.toString());
+    function getProduct(uri: Uri): Product {
+        let p = products.get(uri.toString());
+        if (p === undefined) {
+            return {
+                uri: uri.toString(),
+                name: "",
+                language: "",
+                content: "",
+                rangeMap: [{ sbegin: 0, send: 0, tbegin: 0, tend: 0 }],
+                handleSelectionChange: false
+            };
+        } else {
+            return p;
+        }
     }
 
     function productToTargetUri(product: Product): Uri {
@@ -67,10 +79,10 @@ export namespace Monto {
 
         provideTextDocumentContent(uri: Uri): string {
             let product = products.get(uri.toString());
-            if (product) {
-                return product.content;
-            } else {
+            if (product === undefined) {
                 return "unknown content";
+            } else {
+                return product.content;
             }
         }
 
@@ -116,30 +128,31 @@ export namespace Monto {
         let sourceUri = targetUriToSourceUri(targetUri);
         openInEditor(sourceUri, false).then(sourceEditor => {
             let product = getProduct(targetUri);
-            if (product) {
-                if (product.handleSelectionChange) {
-                    let sourceSelection = getSourceSelection(product, targetEditor, change.selections[0], sourceEditor);
-                    if (sourceSelection) {
-                        showSourceSelection(sourceEditor, sourceSelection);
-                    }
-                } else {
-                    product.handleSelectionChange = true;
+            if (product.handleSelectionChange) {
+                let sourceSelections =
+                    change.selections.map(targetSelection => {
+                        return getSourceSelection(product, targetEditor, targetSelection, sourceEditor);
+                    });
+                if (sourceSelections.length > 0) {
+                    showSourceSelections(sourceEditor, sourceSelections);
                 }
+            } else {
+                product.handleSelectionChange = true;
             }
         });
     }
 
-    function getSourceSelection(product : Product, targetEditor: TextEditor, targetSelection: Selection, sourceEditor: TextEditor): Range | undefined {
+    function getSourceSelection(product : Product, targetEditor: TextEditor, targetSelection: Selection, sourceEditor: TextEditor): Range {
         let targetOffset = targetEditor.document.offsetAt(targetSelection.start);
         let pair = findContaining(product.rangeMap, targetOffset);
-        if (pair) {
-            return pairToSourceSelection(sourceEditor, pair);
+        if (pair === undefined) {
+            return new Range(0, 0, 0, 0);
         } else {
-            return undefined;
+            return pairToSourceSelection(sourceEditor, pair);
         }
     }
 
-    function findContaining(positions: [RangePair], targetOffset: number): RangePair | undefined {
+    function findContaining(positions: RangePair[], targetOffset: number): RangePair | undefined {
         return positions.find(entry =>
             (entry.tbegin <= targetOffset) && (targetOffset < entry.tend)
         );
@@ -151,7 +164,7 @@ export namespace Monto {
         return new Range(s, f);
     }
 
-    function showSourceSelection(editor: TextEditor, selection: Range) {
+    function showSourceSelections(editor: TextEditor, selections: Range[]) {
         window.showTextDocument(
             editor.document,
             {
@@ -159,8 +172,8 @@ export namespace Monto {
                 preview: false
             }
         );
-        editor.selections = [new Selection(selection.start, selection.end)];
-        editor.revealRange(selection, TextEditorRevealType.InCenterIfOutsideViewport);
+        editor.selections = selections.map(s => new Selection(s.start, s.end));
+        editor.revealRange(selections[0], TextEditorRevealType.InCenterIfOutsideViewport);
     }
 
     // Utilities
