@@ -11,17 +11,20 @@ export namespace Monto {
         name: string;
         language: string;
         content: string;
-        rangeMap: RangePair[];
+        rangeMap: RangeEntry[];
+        rangeMapRev: RangeEntry[];
 
         // Internal fields
-        rangeMapST: RangePair[];
-        rangeMapTS: RangePair[];
         handleSelectionChange: boolean;
     }
 
-    export interface RangePair {
-        sstart: number; send: number;
-        tstart: number; tend: number;
+    export interface RangeEntry {
+        source: OffsetRange;
+        targets: OffsetRange[];
+    }
+
+    export interface OffsetRange {
+        start: number; end: number;
     }
 
     namespace PublishProduct {
@@ -34,14 +37,6 @@ export namespace Monto {
 
     function saveProduct(product: Product) {
         let uri = productToTargetUri(product);
-        product.rangeMapST = JSON.parse(JSON.stringify(product.rangeMap));
-        product.rangeMapST = product.rangeMapST.sort((a, b) =>
-            (a.send - a.sstart) - (b.send - b.sstart)
-        );
-        product.rangeMapTS = JSON.parse(JSON.stringify(product.rangeMap));
-        product.rangeMapTS = product.rangeMapTS.sort((a, b) =>
-            (a.tend - a.tstart) - (b.tend - b.tstart)
-        );
         products.set(uri.toString(), product);
         product.handleSelectionChange = false;
         montoProvider.onDidChangeEmitter.fire(uri);
@@ -54,15 +49,17 @@ export namespace Monto {
     function getProduct(uri: Uri): Product {
         let p = products.get(uri.toString());
         if (p === undefined) {
-            let range = { sstart: 0, send: 0, tstart: 0, tend: 0 };
+            let dummyRange = {
+                source: { start: 0, end: 0 },
+                targets: [{ start: 0, end: 0 }]
+            };
             return {
                 uri: uri.toString(),
                 name: "",
                 language: "",
                 content: "",
-                rangeMap: [range],
-                rangeMapST: [range],
-                rangeMapTS: [range],
+                rangeMap: [dummyRange],
+                rangeMapRev: [dummyRange],
                 handleSelectionChange: false
             };
         } else {
@@ -154,9 +151,9 @@ export namespace Monto {
                     if (targetSourceUri.toString() === sourceUri) {
                         let product = getProduct(targetUri);
                         let targetSelections =
-                            sourceSelections.map(sourceSelection => {
-                                return getSelection(product, sourceEditor, sourceSelection, targetEditor, true);
-                            });
+                            flatten(sourceSelections.map(sourceSelection => {
+                                return getSelections(product, sourceEditor, sourceSelection, targetEditor, true);
+                            }));
                         if (targetSelections.length > 0) {
                             product.handleSelectionChange = false;
                             showSelections(targetEditor, targetSelections);
@@ -177,9 +174,10 @@ export namespace Monto {
             let product = getProduct(targetUri);
             if (product.handleSelectionChange) {
                 let sourceSelections =
-                    change.selections.map(targetSelection => {
-                        return getSelection(product, targetEditor, targetSelection, sourceEditor, false);
-                    });
+                    flatten(change.selections.map(targetSelection => {
+                        let x = getSelections(product, targetEditor, targetSelection, sourceEditor, false);
+                        return x;
+                    }));
                 if (sourceSelections.length > 0) {
                     showSelections(sourceEditor, sourceSelections);
                 }
@@ -191,41 +189,36 @@ export namespace Monto {
 
     // Utilities
 
-    function getSelection(product : Product, fromEditor: TextEditor, fromSelection: Selection, toEditor: TextEditor, forward: boolean): Range {
+    function flatten(ranges: Range[][]): Range[] {
+        return ranges.reduce((a, b) => a.concat(b));
+    }
+
+    function getSelections(product : Product, fromEditor: TextEditor, fromSelection: Selection, toEditor: TextEditor, forward: boolean): Range[] {
         let fromOffset = fromEditor.document.offsetAt(fromSelection.start);
-        let pair = findContainingRange(product, fromOffset, forward);
-        if (pair === undefined) {
-            return new Range(0, 0, 0, 0);
-        } else if (forward) {
-            return pairToTargetSelection(toEditor, pair);
+        let entry = findContainingRangeEntry(product, fromOffset, forward);
+        if (entry === undefined) {
+            return [new Range(0, 0, 0, 0)];
         } else {
-            return pairToSourceSelection(toEditor, pair);
+            return targetsToSelections(toEditor, entry.targets);
         }
     }
 
-    function findContainingRange(product : Product, offset: number, forward: boolean): RangePair | undefined {
-        if (forward) {
-            return product.rangeMapST.find(entry =>
-                (entry.sstart <= offset) && (offset < entry.send)
-            );
-        } else {
-            return product.rangeMapTS.find(entry =>
-                (entry.tstart <= offset) && (offset < entry.tend)
-            );
-        }
+    function findContainingRangeEntry(product: Product, offset: number, forward: boolean): RangeEntry| undefined {
+        let map = forward ? product.rangeMap : product.rangeMapRev;
+        return map.find(entry =>
+            (entry.source.start <= offset) && (offset < entry.source.end)
+        );
     }
 
-    function pairToSourceSelection(editor: TextEditor, entry: RangePair): Range {
-        return pairToSelection(editor, entry.sstart, entry.send);
+    function targetsToSelections(editor: TextEditor, targets: OffsetRange[]): Range[] {
+        return targets.map(target => {
+            return targetToSelection(editor, target);
+        });
     }
 
-    function pairToTargetSelection(editor: TextEditor, entry: RangePair): Range {
-        return pairToSelection(editor, entry.tstart, entry.tend);
-    }
-
-    function pairToSelection(editor: TextEditor, start: number, end: number): Range {
-        let s = editor.document.positionAt(start);
-        let f = editor.document.positionAt(end);
+    function targetToSelection(editor: TextEditor, target: OffsetRange): Range {
+        let s = editor.document.positionAt(target.start);
+        let f = editor.document.positionAt(target.end);
         return new Range(s, f);
     }
 
@@ -245,7 +238,7 @@ export namespace Monto {
         return window.showTextDocument(
             uri,
             {
-                preserveFocus: isTarget,
+                preserveFocus: true,
                 viewColumn: isTarget ? ViewColumn.Two : ViewColumn.One,
                 preview: false
             }
