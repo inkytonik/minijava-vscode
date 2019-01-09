@@ -152,9 +152,9 @@ export namespace Monto {
                     if (targetSourceUri.toString() === sourceUri) {
                         let product = getProduct(targetUri);
                         let targetSelections =
-                        sourceSelections.map(sourceSelection => {
-                            return getSelection(product, sourceEditor, sourceSelection, targetEditor, true);
-                        });
+                            sourceSelections.map(sourceSelection => {
+                                return getSelection(product, sourceEditor, sourceSelection, targetEditor, true);
+                            });
                         if (targetSelections.length > 0) {
                             product.handleSelectionChange = false;
                             showSelections(targetEditor, targetSelections);
