@@ -34,10 +34,12 @@ export namespace Monto {
 
     function saveProduct(product: Product) {
         let uri = productToTargetUri(product);
-        product.rangeMapST = product.rangeMap.sort((a , b) =>
-            (b.tend - b.tbegin) - (a.tend - a.tbegin)
+        product.rangeMapST = JSON.parse(JSON.stringify(product.rangeMap));
+        product.rangeMapST = product.rangeMapST.sort((a, b) =>
+            (a.send - a.sbegin) - (b.send - b.sbegin)
         );
-        product.rangeMapTS = product.rangeMap.sort((a , b) =>
+        product.rangeMapTS = JSON.parse(JSON.stringify(product.rangeMap));
+        product.rangeMapTS = product.rangeMapTS.sort((a, b) =>
             (a.tend - a.tbegin) - (b.tend - b.tbegin)
         );
         products.set(uri.toString(), product);
