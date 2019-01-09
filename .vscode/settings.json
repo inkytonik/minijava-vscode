@@ -22,9 +22,11 @@
         "prettytree",
         "sbegin",
         "sourcetree",
+        "sstart",
         "targettree",
         "tbegin",
         "tsc",
+        "tstart",
         "usr"
     ]
 }

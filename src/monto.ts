@@ -20,8 +20,8 @@ export namespace Monto {
     }
 
     export interface RangePair {
-        sbegin: number; send: number;
-        tbegin: number; tend: number;
+        sstart: number; send: number;
+        tstart: number; tend: number;
     }
 
     namespace PublishProduct {
@@ -36,11 +36,11 @@ export namespace Monto {
         let uri = productToTargetUri(product);
         product.rangeMapST = JSON.parse(JSON.stringify(product.rangeMap));
         product.rangeMapST = product.rangeMapST.sort((a, b) =>
-            (a.send - a.sbegin) - (b.send - b.sbegin)
+            (a.send - a.sstart) - (b.send - b.sstart)
         );
         product.rangeMapTS = JSON.parse(JSON.stringify(product.rangeMap));
         product.rangeMapTS = product.rangeMapTS.sort((a, b) =>
-            (a.tend - a.tbegin) - (b.tend - b.tbegin)
+            (a.tend - a.tstart) - (b.tend - b.tstart)
         );
         products.set(uri.toString(), product);
         product.handleSelectionChange = false;
@@ -54,7 +54,7 @@ export namespace Monto {
     function getProduct(uri: Uri): Product {
         let p = products.get(uri.toString());
         if (p === undefined) {
-            let range = { sbegin: 0, send: 0, tbegin: 0, tend: 0 };
+            let range = { sstart: 0, send: 0, tstart: 0, tend: 0 };
             return {
                 uri: uri.toString(),
                 name: "",
@@ -206,21 +206,21 @@ export namespace Monto {
     function findContainingRange(product : Product, offset: number, forward: boolean): RangePair | undefined {
         if (forward) {
             return product.rangeMapST.find(entry =>
-                (entry.sbegin <= offset) && (offset < entry.send)
+                (entry.sstart <= offset) && (offset < entry.send)
             );
         } else {
             return product.rangeMapTS.find(entry =>
-                (entry.tbegin <= offset) && (offset < entry.tend)
+                (entry.tstart <= offset) && (offset < entry.tend)
             );
         }
     }
 
     function pairToSourceSelection(editor: TextEditor, entry: RangePair): Range {
-        return pairToSelection(editor, entry.sbegin, entry.send);
+        return pairToSelection(editor, entry.sstart, entry.send);
     }
 
     function pairToTargetSelection(editor: TextEditor, entry: RangePair): Range {
-        return pairToSelection(editor, entry.tbegin, entry.tend);
+        return pairToSelection(editor, entry.tstart, entry.tend);
     }
 
     function pairToSelection(editor: TextEditor, start: number, end: number): Range {
