@@ -58,7 +58,7 @@ export namespace Monto {
                 targets: [{ start: 0, end: 0 }]
             };
             return {
-                uri: uri.toString(),
+                uri: "",
                 name: "",
                 language: "",
                 content: "",
@@ -123,8 +123,7 @@ export namespace Monto {
         window.onDidChangeVisibleTextEditors(editors => {
             editors.forEach(editor => {
                 if (editor.viewColumn !== undefined) {
-                    let key = editor.document.uri.toString();
-                    columns.set(key, editor.viewColumn);
+                    columns.set(editor.document.uri.toString(), editor.viewColumn);
                 }
             });
         });
