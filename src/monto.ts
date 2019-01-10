@@ -33,7 +33,11 @@ export namespace Monto {
         );
     }
 
+    // Map Monto uri strings to latest version of their products
     let products = new Map<string, Product>();
+
+    // Map all uri strings to the view column in which they are displayed
+    let columns = new Map<string, ViewColumn>();
 
     function saveProduct(product: Product) {
         let uri = productToTargetUri(product);
@@ -116,6 +120,15 @@ export namespace Monto {
             }
         });
 
+        window.onDidChangeVisibleTextEditors(editors => {
+            editors.forEach(editor => {
+                if (editor.viewColumn !== undefined) {
+                    let key = editor.document.uri.toString();
+                    columns.set(key, editor.viewColumn);
+                }
+            });
+        });
+
         context.subscriptions.push(
             commands.registerCommand(`${name}.selectLinkedEditors`, () => {
                 selectLinkedTargetRanges();
@@ -156,7 +169,7 @@ export namespace Monto {
                             }));
                         if (targetSelections.length > 0) {
                             product.handleSelectionChange = false;
-                            showSelections(targetEditor, targetSelections);
+                            showSelections(targetUri, targetEditor, targetSelections, true);
                         }
                     }
                 }
@@ -179,7 +192,7 @@ export namespace Monto {
                         return x;
                     }));
                 if (sourceSelections.length > 0) {
-                    showSelections(sourceEditor, sourceSelections);
+                    showSelections(sourceUri, sourceEditor, sourceSelections, false);
                 }
             } else {
                 product.handleSelectionChange = true;
@@ -222,25 +235,38 @@ export namespace Monto {
         return new Range(s, f);
     }
 
-    function showSelections(editor: TextEditor, selections: Range[]) {
+    function viewColumn(uri: Uri, isTarget: Boolean): ViewColumn {
+        let key = uri.toString();
+        let column = columns.get(key);
+        if (column === undefined) {
+            let original = isTarget ? ViewColumn.Two : ViewColumn.One;
+            columns.set(key, original);
+            return original;
+        } else {
+            return column;
+        }
+    }
+
+    function showSelections(uri : Uri, editor: TextEditor, selections: Range[], isTarget: Boolean) {
         window.showTextDocument(
             editor.document,
             {
                 preserveFocus: false,
-                preview: false
+                preview: false,
+                viewColumn: viewColumn(uri, isTarget)
             }
         );
         editor.selections = selections.map(s => new Selection(s.start, s.end));
         editor.revealRange(selections[0], TextEditorRevealType.InCenterIfOutsideViewport);
     }
 
-    function openInEditor(uri: Uri, isTarget: boolean): Thenable<TextEditor>  {
+    function openInEditor(uri: Uri, isTarget: boolean): Thenable<TextEditor> {
         return window.showTextDocument(
             uri,
             {
                 preserveFocus: true,
-                viewColumn: isTarget ? ViewColumn.Two : ViewColumn.One,
-                preview: false
+                preview: false,
+                viewColumn: viewColumn(uri, isTarget)
             }
         );
     }
