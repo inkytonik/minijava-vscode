@@ -1,6 +1,6 @@
 import { commands, ExtensionContext, EventEmitter, Range, Selection, TextDocumentContentProvider, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, Uri, ViewColumn, workspace, window } from 'vscode';
 import { NotificationHandler, NotificationType } from 'vscode-jsonrpc';
-import { LanguageClient } from 'vscode-languageclient';
+import { LanguageClient, DidChangeConfigurationNotification } from 'vscode-languageclient';
 
 export namespace Monto {
 
@@ -128,6 +128,12 @@ export namespace Monto {
             });
         });
 
+        workspace.onDidChangeConfiguration(event => {
+            if (event.affectsConfiguration(name)) {
+                sendConfigurationToServer(client, name);
+            }
+        });
+
         context.subscriptions.push(
             commands.registerCommand(`${name}.selectLinkedEditors`, () => {
                 selectLinkedTargetRanges();
@@ -137,11 +143,19 @@ export namespace Monto {
         context.subscriptions.push(workspace.registerTextDocumentContentProvider(montoScheme, montoProvider));
 
         client.onReady().then(_ => {
+            sendConfigurationToServer(client, name);
             client.onNotification(PublishProduct.type, product => {
                 saveProduct(product);
                 handler(product);
             });
         });
+    }
+
+    function sendConfigurationToServer(client: LanguageClient, name: string) {
+        client.sendNotification(
+            DidChangeConfigurationNotification.type.method,
+            { settings: workspace.getConfiguration(name) }
+        );
     }
 
     function isMontoEditor(editor: TextEditor): Boolean {

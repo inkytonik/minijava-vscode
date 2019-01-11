@@ -69,6 +69,11 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Show the abstract syntax tree of the JVM bytecode from the MiniJava compiler."
+                },
+                "minijava.updateOnChange": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "By default, updates are processed when a relevant file is opened or saved. If this setting is true, they are also updated after each change."
                 }
             }
         },
