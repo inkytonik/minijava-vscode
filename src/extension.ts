@@ -1,6 +1,6 @@
 'use strict';
 
-import { ExtensionContext, workspace } from 'vscode';
+import { ExtensionContext } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient';
 import { Monto } from './monto';
 
@@ -45,23 +45,9 @@ export function activate(context: ExtensionContext) {
         clientOptions
     );
 
-    Monto.setup("minijava", context, client, product => {
-        if (shouldShowProduct(product)) {
-            Monto.showProduct(product);
-        }
-    });
+    Monto.setup("minijava", context, client);
 
     context.subscriptions.push(client.start());
-}
-
-function shouldShowProduct(product: Monto.Product): Boolean {
-    let config = workspace.getConfiguration('minijava');
-    return (product.name === 'name' && config.showNameAnalysisStructure) ||
-        (product.name === 'outline' && config.showOutline) ||
-        (product.name === 'source' && config.showSource) ||
-        (product.name === 'sourcetree' && config.showSourceTree) ||
-        (product.name === 'target' && config.showTarget) ||
-        (product.name === 'targettree' && config.showTargetTree);
 }
 
 export function deactivate(): Thenable<void> | undefined {

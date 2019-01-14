@@ -1,5 +1,5 @@
 import { commands, ExtensionContext, EventEmitter, Range, Selection, TextDocumentContentProvider, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, Uri, ViewColumn, workspace, window } from 'vscode';
-import { NotificationHandler, NotificationType } from 'vscode-jsonrpc';
+import { NotificationType } from 'vscode-jsonrpc';
 import { LanguageClient, DidChangeConfigurationNotification } from 'vscode-languageclient';
 
 export namespace Monto {
@@ -111,8 +111,7 @@ export namespace Monto {
     export function setup(
             name: string,
             context: ExtensionContext,
-            client: LanguageClient,
-            handler: NotificationHandler<Product>
+            client: LanguageClient
         ) {
         window.onDidChangeTextEditorSelection(change => {
             if (isMontoEditor(change.textEditor)) {
@@ -142,11 +141,12 @@ export namespace Monto {
 
         context.subscriptions.push(workspace.registerTextDocumentContentProvider(montoScheme, montoProvider));
 
+        client.clientOptions.initializationOptions = workspace.getConfiguration(name);
+
         client.onReady().then(_ => {
-            sendConfigurationToServer(client, name);
             client.onNotification(PublishProduct.type, product => {
                 saveProduct(product);
-                handler(product);
+                showProduct(product);
             });
         });
     }
