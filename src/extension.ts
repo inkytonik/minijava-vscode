@@ -10,7 +10,7 @@ export function activate(context: ExtensionContext) {
     let java = "/usr/bin/java";
     let args = [
         "-classpath",
-        "/Users/asloane/Projects/Kiama/kiama/extras/target/scala-2.12/kiama-extras-assembly-2.3.0-SNAPSHOT-tests.jar",
+        "/Users/asloane/Projects/Kiama/kiama/extras/target/scala-2.13/kiama-extras-assembly-2.3.0-SNAPSHOT-tests.jar",
         "org.bitbucket.inkytonik.kiama.example.minijava.Main",
         "--server"
     ];
