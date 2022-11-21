@@ -4,6 +4,7 @@
   "description": "MiniJava Language",
   "version": "0.1.0",
   "publisher": "inkytonik",
+  "repository": "https://github.com/inkytonik/minijava-vscode",
   "engines": {
     "vscode": "^1.46.0"
   },
