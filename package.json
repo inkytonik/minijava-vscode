@@ -2,7 +2,7 @@
   "name": "minijava",
   "displayName": "minijava",
   "description": "MiniJava Language",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "inkytonik",
   "engines": {
     "vscode": "^1.46.0"
